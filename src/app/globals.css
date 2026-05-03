@@ -1,0 +1,75 @@
+@import "tailwindcss";
+
+:root {
+  /* Industrial dark theme inspired by Gearhead Pro reference */
+  --background: #0f0f10;
+  --foreground: #e5e2e3;
+  --accent: #ff571a;
+  --accent-light: rgba(255, 87, 26, 0.18);
+  --accent-dark: #d8430f;
+  --surface: #1a1a1c;
+  --surface-alt: #232325;
+  --border: #2e2e30;
+  --muted: #a1a1aa;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-accent: var(--accent);
+  --color-accent-light: var(--accent-light);
+  --color-accent-dark: var(--accent-dark);
+  --color-surface: var(--surface);
+  --color-surface-alt: var(--surface-alt);
+  --color-border: var(--border);
+  --color-muted: var(--muted);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --font-display: var(--font-space-grotesk);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), system-ui, sans-serif;
+}
+
+/* Smooth transitions for interactive elements */
+button,
+a,
+input,
+textarea,
+select {
+  transition: all 0.15s ease;
+}
+
+/* Custom scrollbar (dark) */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #3f3f46;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #52525b;
+}
+
+/* Native form controls dark variant */
+input,
+textarea,
+select {
+  color-scheme: dark;
+}
+
+/* Datalist popup dark hint (limited browser support) */
+input::-webkit-calendar-picker-indicator {
+  filter: invert(0.7);
+}

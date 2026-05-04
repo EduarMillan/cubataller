@@ -23,8 +23,18 @@ export async function signup(formData: FormData) {
   const email = ((formData.get("email") as string) || "").trim().toLowerCase();
   const password = formData.get("password") as string;
 
+  const headersList = await headers();
+  const origin = headersList.get("origin") || headersList.get("x-forwarded-host") || "http://localhost:3000";
+  const baseUrl = origin.startsWith("http") ? origin : `https://${origin}`;
+
   const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase.auth.signUp({ email, password });
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      emailRedirectTo: `${baseUrl}/auth/callback?next=/onboarding`,
+    },
+  });
 
   if (error) {
     const lower = error.message.toLowerCase();

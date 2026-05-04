@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { normalizeWhatsapp } from "@/lib/phone";
 
 export async function createStore(formData: FormData) {
   const supabase = await createSupabaseServerClient();
@@ -17,7 +18,7 @@ export async function createStore(formData: FormData) {
   const provincia = (formData.get("provincia") as string | null)?.trim() || null;
   const municipio = (formData.get("municipio") as string | null)?.trim() || null;
   const direccion = (formData.get("direccion") as string | null)?.trim() || null;
-  const whatsapp = (formData.get("whatsapp") as string | null)?.trim() || null;
+  const whatsapp = normalizeWhatsapp(formData.get("whatsapp") as string | null);
   const currency = (formData.get("currency") as string | null)?.trim() || "CUP";
 
   if (!name || !slug) {
@@ -48,6 +49,27 @@ export async function createStore(formData: FormData) {
     redirect(`/mi-servicio?error=${encodeURIComponent(`El correo ${user.email ?? ""} ya está registrado con un servicio. Un mismo correo solo puede tener una tienda o un servicio.`)}`);
   }
 
+  // WhatsApp must be unique across stores and across service_providers.
+  // The DB has a UNIQUE index on each table; here we add the cross-table check.
+  if (whatsapp) {
+    const { data: storeWithPhone } = await admin
+      .from("stores")
+      .select("id")
+      .eq("whatsapp_number", whatsapp)
+      .maybeSingle();
+    if (storeWithPhone) {
+      redirect(`/dashboard/crear-tienda?error=${encodeURIComponent("Este número de WhatsApp ya está registrado en otra tienda")}`);
+    }
+    const { data: serviceWithPhone } = await admin
+      .from("service_providers")
+      .select("id")
+      .eq("whatsapp_number", whatsapp)
+      .maybeSingle();
+    if (serviceWithPhone) {
+      redirect(`/dashboard/crear-tienda?error=${encodeURIComponent("Este número de WhatsApp ya está registrado en un servicio")}`);
+    }
+  }
+
   const { data: store, error: storeError } = await admin
     .from("stores")
     .insert({
@@ -65,9 +87,12 @@ export async function createStore(formData: FormData) {
     .single();
 
   if (storeError) {
-    const msg = storeError.code === "23505"
-      ? "Ese identificador ya está en uso"
-      : storeError.message;
+    let msg = storeError.message;
+    if (storeError.code === "23505") {
+      msg = storeError.message.includes("whatsapp")
+        ? "Este número de WhatsApp ya está registrado"
+        : "Ese identificador ya está en uso";
+    }
     redirect(`/dashboard/crear-tienda?error=${encodeURIComponent(msg)}`);
   }
 

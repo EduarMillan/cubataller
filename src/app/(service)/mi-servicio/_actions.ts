@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { SERVICE_CATEGORY_MAP, DAYS_OF_WEEK, type WeeklyHours } from "@/lib/service-categories";
+import { normalizeWhatsapp } from "@/lib/phone";
 
 type ParsedForm = {
   name: string;
@@ -30,7 +31,7 @@ function parseForm(formData: FormData): ParsedForm {
     slug: ((formData.get("slug") as string) || "").trim().toLowerCase(),
     category: ((formData.get("category") as string) || "").trim(),
     description: ((formData.get("description") as string) || "").trim() || null,
-    whatsapp: ((formData.get("whatsapp") as string) || "").trim() || null,
+    whatsapp: normalizeWhatsapp((formData.get("whatsapp") as string) || ""),
     provincia: ((formData.get("provincia") as string) || "").trim() || null,
     municipio: ((formData.get("municipio") as string) || "").trim() || null,
     direccion: ((formData.get("direccion") as string) || "").trim() || null,
@@ -80,6 +81,26 @@ export async function createService(formData: FormData) {
     redirect(`/mi-servicio?error=${encodeURIComponent(`El correo ${user.email ?? ""} ya está registrado con una tienda. Un mismo correo solo puede tener una tienda o un servicio.`)}`);
   }
 
+  // WhatsApp must be unique across services and across stores
+  if (parsed.whatsapp) {
+    const { data: serviceWithPhone } = await admin
+      .from("service_providers")
+      .select("id")
+      .eq("whatsapp_number", parsed.whatsapp)
+      .maybeSingle();
+    if (serviceWithPhone) {
+      redirect(`/mi-servicio?error=${encodeURIComponent("Este número de WhatsApp ya está registrado en otro servicio")}`);
+    }
+    const { data: storeWithPhone } = await admin
+      .from("stores")
+      .select("id")
+      .eq("whatsapp_number", parsed.whatsapp)
+      .maybeSingle();
+    if (storeWithPhone) {
+      redirect(`/mi-servicio?error=${encodeURIComponent("Este número de WhatsApp ya está registrado en una tienda")}`);
+    }
+  }
+
   const { error } = await admin.from("service_providers").insert({
     user_id: user.id,
     name: parsed.name,
@@ -94,9 +115,12 @@ export async function createService(formData: FormData) {
   });
 
   if (error) {
-    const msg = error.code === "23505"
-      ? "Ese identificador ya está en uso, elige otro"
-      : error.message;
+    let msg = error.message;
+    if (error.code === "23505") {
+      msg = error.message.includes("whatsapp")
+        ? "Este número de WhatsApp ya está registrado"
+        : "Ese identificador ya está en uso, elige otro";
+    }
     redirect(`/mi-servicio?error=${encodeURIComponent(msg)}`);
   }
 
@@ -117,6 +141,28 @@ export async function updateService(formData: FormData) {
     redirect(`/mi-servicio?error=${encodeURIComponent(validationError)}`);
   }
 
+  // WhatsApp must be unique across services (excluding self) and across stores
+  if (parsed.whatsapp) {
+    const admin = createSupabaseAdminClient();
+    const { data: otherService } = await admin
+      .from("service_providers")
+      .select("id")
+      .eq("whatsapp_number", parsed.whatsapp)
+      .neq("user_id", user.id)
+      .maybeSingle();
+    if (otherService) {
+      redirect(`/mi-servicio?error=${encodeURIComponent("Este número de WhatsApp ya está registrado en otro servicio")}`);
+    }
+    const { data: storeWithPhone } = await admin
+      .from("stores")
+      .select("id")
+      .eq("whatsapp_number", parsed.whatsapp)
+      .maybeSingle();
+    if (storeWithPhone) {
+      redirect(`/mi-servicio?error=${encodeURIComponent("Este número de WhatsApp ya está registrado en una tienda")}`);
+    }
+  }
+
   const { error } = await supabase
     .from("service_providers")
     .update({
@@ -133,9 +179,12 @@ export async function updateService(formData: FormData) {
     .eq("user_id", user.id);
 
   if (error) {
-    const msg = error.code === "23505"
-      ? "Ese identificador ya está en uso, elige otro"
-      : error.message;
+    let msg = error.message;
+    if (error.code === "23505") {
+      msg = error.message.includes("whatsapp")
+        ? "Este número de WhatsApp ya está registrado"
+        : "Ese identificador ya está en uso, elige otro";
+    }
     redirect(`/mi-servicio?error=${encodeURIComponent(msg)}`);
   }
 

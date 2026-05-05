@@ -50,8 +50,8 @@ export default async function Home() {
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 sm:py-4">
           <Link href="/" className="flex items-center gap-2">
             <img
-              src="/cubagarage.png"
-              alt="Cuba Garage"
+              src="/cubamecanica.png"
+              alt="Cuba Mecánica"
               className="h-10 w-auto object-contain sm:h-11"
             />
           </Link>
@@ -276,7 +276,7 @@ export default async function Home() {
               ¿VENDES O REPARAS?
             </h2>
             <p className="mx-auto mt-3 max-w-xl text-sm text-zinc-400 sm:text-base">
-              Publica tu negocio en FIXCAR y aparece en las búsquedas de miles
+              Publica tu negocio en Cuba Mecánica y aparece en las búsquedas de miles
               de clientes que buscan repuestos y servicios automotrices en Cuba.
             </p>
           </div>
@@ -687,8 +687,8 @@ export default async function Home() {
           <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
             <div>
               <img
-                src="/cubagarage.png"
-                alt="Cuba Garage"
+                src="/cubamecanica.png"
+                alt="Cuba Mecánica"
                 className="h-10 w-auto object-contain"
               />
               <p className="mt-3 max-w-xs text-xs text-zinc-500">
@@ -764,7 +764,7 @@ export default async function Home() {
             </div>
           </div>
           <div className="mt-10 border-t border-zinc-800 pt-6 text-center text-xs text-zinc-500">
-            &copy; {new Date().getFullYear()} FIXCAR. Todos los derechos
+            &copy; {new Date().getFullYear()} Cuba Mecánica. Todos los derechos
             reservados.
           </div>
         </div>

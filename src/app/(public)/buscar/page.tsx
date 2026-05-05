@@ -15,7 +15,7 @@ export const metadata: Metadata = {
   description:
     "Busca repuestos automotrices por marca, modelo, año y ubicación. Encuentra piezas disponibles en tiendas cerca de ti en Cuba.",
   openGraph: {
-    title: "Buscar repuestos — FIXCAR",
+    title: "Buscar repuestos — Cuba Mecánica",
     description:
       "Busca repuestos automotrices por marca, modelo, año y ubicación en Cuba.",
   },
@@ -139,8 +139,8 @@ export default async function BuscarPage({
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6 sm:py-4">
           <Link href="/" className="flex items-center">
             <img
-              src="/cubagarage.png"
-              alt="Cuba Garage"
+              src="/cubamecanica.png"
+              alt="Cuba Mecánica"
               className="h-10 w-auto object-contain sm:h-11"
             />
           </Link>

@@ -25,8 +25,8 @@ export default function LoginPage({
           </Link>
           <div className="mt-4 flex justify-center">
             <img
-              src="/cubagarage.png"
-              alt="Cuba Garage"
+              src="/cubamecanica.png"
+              alt="Cuba Mecánica"
               className="h-16 w-auto object-contain"
             />
           </div>
@@ -76,7 +76,7 @@ async function LoginForm({
       <div className="space-y-1.5">
         <label htmlFor="email" className="flex items-center text-sm font-medium">
           Correo electrónico
-          <InfoTip content="Ingresa el email con el que te registraste en FIXCAR. Ejemplo: nombre@dominio.com" />
+          <InfoTip content="Ingresa el email con el que te registraste en Cuba Mecánica. Ejemplo: nombre@dominio.com" />
         </label>
         <input
           id="email"

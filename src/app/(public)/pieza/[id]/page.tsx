@@ -50,7 +50,7 @@ export async function generateMetadata({
     title,
     description,
     openGraph: {
-      title: `${title} | FIXCAR`,
+      title: `${title} | Cuba Mecánica`,
       description,
       images,
     },
@@ -116,13 +116,13 @@ export default async function PiezaDetallePage({
 
   // WhatsApp
   const whatsappText = encodeURIComponent(
-    `Hola, vi esta pieza en FIXCAR:\n• ${part.name}\n• SKU: ${part.sku}\n• Vehículo: ${part.vehicle_make} ${part.vehicle_model}${part.vehicle_year_from ? ` (${part.vehicle_year_from}–${part.vehicle_year_to})` : ""}\n${part.price != null ? `• Precio: $${Number(part.price).toLocaleString("es-CU")}\n` : ""}\n¿Está disponible?`,
+    `Hola, vi esta pieza en Cuba Mecánica:\n• ${part.name}\n• SKU: ${part.sku}\n• Vehículo: ${part.vehicle_make} ${part.vehicle_model}${part.vehicle_year_from ? ` (${part.vehicle_year_from}–${part.vehicle_year_to})` : ""}\n${part.price != null ? `• Precio: $${Number(part.price).toLocaleString("es-CU")}\n` : ""}\n¿Está disponible?`,
   );
   const whatsappUrl = store.whatsapp_number
     ? `https://wa.me/${store.whatsapp_number}?text=${whatsappText}`
     : null;
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://cubagarage.cu";
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://cubamecanica.com";
   const productJsonLd = {
     "@context": "https://schema.org",
     "@type": "Product",
@@ -167,8 +167,8 @@ export default async function PiezaDetallePage({
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6 sm:py-4">
           <Link href="/" className="flex items-center">
             <img
-              src="/cubagarage.png"
-              alt="Cuba Garage"
+              src="/cubamecanica.png"
+              alt="Cuba Mecánica"
               className="h-10 w-auto object-contain sm:h-11"
             />
           </Link>
@@ -314,7 +314,7 @@ export default async function PiezaDetallePage({
 
       <footer className="border-t border-zinc-800 bg-zinc-950 py-6">
         <div className="mx-auto max-w-6xl px-4 text-center text-xs text-zinc-500 sm:px-6">
-          <p>&copy; {new Date().getFullYear()} FIXCAR. Todos los derechos reservados.</p>
+          <p>&copy; {new Date().getFullYear()} Cuba Mecánica. Todos los derechos reservados.</p>
         </div>
       </footer>
     </div>

@@ -7,7 +7,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 export const metadata: Metadata = {
   title: "Crear cuenta",
   description:
-    "Registra tu tienda de repuestos en FIXCAR. Prueba gratuita de 90 días, sin compromiso.",
+    "Registra tu tienda de repuestos en Cuba Mecánica. Prueba gratuita de 90 días, sin compromiso.",
 };
 
 export default async function RegistroPage({
@@ -35,8 +35,8 @@ export default async function RegistroPage({
           </Link>
           <div className="mt-4 flex justify-center">
             <img
-              src="/cubagarage.png"
-              alt="Cuba Garage"
+              src="/cubamecanica.png"
+              alt="Cuba Mecánica"
               className="h-16 w-auto object-contain"
             />
           </div>

@@ -15,7 +15,7 @@ export const metadata: Metadata = {
   description:
     "Encuentra mecánicos, torneros, electricistas automotrices y otros servicios para tu vehículo cerca de ti en Cuba.",
   openGraph: {
-    title: "Servicios automotrices — FIXCAR",
+    title: "Servicios automotrices — Cuba Mecánica",
     description:
       "Mecánicos, torneros, electricistas y más. Encuentra el servicio que necesitas para tu auto.",
   },
@@ -80,8 +80,8 @@ export default async function ServiciosPage({
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6 sm:py-4">
           <Link href="/" className="flex items-center">
             <img
-              src="/cubagarage.png"
-              alt="Cuba Garage"
+              src="/cubamecanica.png"
+              alt="Cuba Mecánica"
               className="h-10 w-auto object-contain sm:h-11"
             />
           </Link>
@@ -296,7 +296,7 @@ function ServiceCard({
   const locationStr = [service.municipio, provinciaName].filter(Boolean).join(", ");
 
   const whatsappUrl = service.whatsapp_number
-    ? `https://wa.me/${service.whatsapp_number}?text=${encodeURIComponent(`Hola, vi tu servicio "${service.name}" en FIXCAR.`)}`
+    ? `https://wa.me/${service.whatsapp_number}?text=${encodeURIComponent(`Hola, vi tu servicio "${service.name}" en Cuba Mecánica.`)}`
     : null;
 
   const addressParts = [service.direccion, service.municipio, provinciaName, "Cuba"].filter(Boolean);

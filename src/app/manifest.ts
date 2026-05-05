@@ -2,8 +2,8 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Cuba Garage — Repuestos y servicios automotrices en Cuba",
-    short_name: "Cuba Garage",
+    name: "Cuba Mecánica — Repuestos y servicios automotrices en Cuba",
+    short_name: "Cuba Mecánica",
     description:
       "Encuentra repuestos automotrices y servicios cerca de ti en Cuba. Busca por marca, modelo y año.",
     start_url: "/",
@@ -13,7 +13,7 @@ export default function manifest(): MetadataRoute.Manifest {
     lang: "es-CU",
     icons: [
       {
-        src: "/cubagarage.png",
+        src: "/cubamecanica.png",
         sizes: "any",
         type: "image/png",
       },

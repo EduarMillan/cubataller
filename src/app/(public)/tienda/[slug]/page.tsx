@@ -31,7 +31,7 @@ export async function generateMetadata({
     title,
     description,
     openGraph: {
-      title: `${store.name} — FIXCAR`,
+      title: `${store.name} — Cuba Mecánica`,
       description,
     },
   };
@@ -78,10 +78,10 @@ export default async function TiendaPublicaPage({
 
   // WhatsApp URL
   const whatsappUrl = store.whatsapp_number
-    ? `https://wa.me/${store.whatsapp_number}?text=${encodeURIComponent(`Hola, vi tu tienda "${store.name}" en FIXCAR y me gustaría consultar sobre una pieza.`)}`
+    ? `https://wa.me/${store.whatsapp_number}?text=${encodeURIComponent(`Hola, vi tu tienda "${store.name}" en Cuba Mecánica y me gustaría consultar sobre una pieza.`)}`
     : null;
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://cubagarage.cu";
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://cubamecanica.com";
   const storeJsonLd = {
     "@context": "https://schema.org",
     "@type": "AutoPartsStore",
@@ -117,8 +117,8 @@ export default async function TiendaPublicaPage({
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6 sm:py-4">
           <Link href="/" className="flex items-center">
             <img
-              src="/cubagarage.png"
-              alt="Cuba Garage"
+              src="/cubamecanica.png"
+              alt="Cuba Mecánica"
               className="h-10 w-auto object-contain sm:h-11"
             />
           </Link>
@@ -305,7 +305,7 @@ export default async function TiendaPublicaPage({
 
       <footer className="border-t border-zinc-800 bg-zinc-950 py-6">
         <div className="mx-auto max-w-6xl px-4 text-center text-xs text-zinc-500 sm:px-6">
-          <p>&copy; {new Date().getFullYear()} FIXCAR. Todos los derechos reservados.</p>
+          <p>&copy; {new Date().getFullYear()} Cuba Mecánica. Todos los derechos reservados.</p>
         </div>
       </footer>
     </div>

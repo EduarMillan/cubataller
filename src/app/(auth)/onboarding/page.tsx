@@ -30,8 +30,8 @@ export default async function OnboardingPage() {
         <header className="text-center">
           <div className="flex justify-center">
             <img
-              src="/cubagarage.png"
-              alt="Cuba Garage"
+              src="/cubamecanica.png"
+              alt="Cuba Mecánica"
               className="h-16 w-auto object-contain"
             />
           </div>

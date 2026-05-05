@@ -63,14 +63,14 @@ export default async function ServicioDetallePage({
     : null;
 
   const whatsappUrl = service.whatsapp_number
-    ? `https://wa.me/${service.whatsapp_number}?text=${encodeURIComponent(`Hola, vi tu servicio "${service.name}" en FIXCAR y me gustaría consultar.`)}`
+    ? `https://wa.me/${service.whatsapp_number}?text=${encodeURIComponent(`Hola, vi tu servicio "${service.name}" en Cuba Mecánica y me gustaría consultar.`)}`
     : null;
 
   const logoUrl = service.logo_url
     ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/service-logos/${service.logo_url}`
     : null;
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://cubagarage.cu";
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://cubamecanica.com";
   const dayMap: Record<string, string> = {
     mon: "https://schema.org/Monday",
     tue: "https://schema.org/Tuesday",
@@ -133,8 +133,8 @@ export default async function ServicioDetallePage({
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6 sm:py-4">
           <Link href="/" className="flex items-center">
             <img
-              src="/cubagarage.png"
-              alt="Cuba Garage"
+              src="/cubamecanica.png"
+              alt="Cuba Mecánica"
               className="h-10 w-auto object-contain sm:h-11"
             />
           </Link>
@@ -295,7 +295,7 @@ export default async function ServicioDetallePage({
 
       <footer className="border-t border-zinc-800 bg-zinc-950 py-6 sm:py-8">
         <div className="mx-auto max-w-6xl px-4 text-center text-xs text-zinc-500 sm:px-6 sm:text-sm">
-          <p>&copy; {new Date().getFullYear()} FIXCAR. Todos los derechos reservados.</p>
+          <p>&copy; {new Date().getFullYear()} Cuba Mecánica. Todos los derechos reservados.</p>
         </div>
       </footer>
     </div>

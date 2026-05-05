@@ -18,13 +18,13 @@ const spaceGrotesk = Space_Grotesk({
   weight: ["500", "600", "700"],
 });
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://cubagarage.cu";
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://cubamecanica.com";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: "Cuba Garage — Repuestos y servicios automotrices en Cuba",
-    template: "%s | Cuba Garage",
+    default: "Cuba Mecánica — Repuestos y servicios automotrices en Cuba",
+    template: "%s | Cuba Mecánica",
   },
   description:
     "Encuentra repuestos automotrices y servicios (mecánicos, torneros, electricistas) cerca de ti en Cuba. Busca por marca, modelo y año. Contacta directo por WhatsApp.",
@@ -47,26 +47,26 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "es_CU",
-    siteName: "Cuba Garage",
+    siteName: "Cuba Mecánica",
     url: siteUrl,
-    title: "Cuba Garage — Repuestos y servicios automotrices en Cuba",
+    title: "Cuba Mecánica — Repuestos y servicios automotrices en Cuba",
     description:
       "Encuentra repuestos automotrices y servicios cerca de ti en Cuba. Busca por marca, modelo y año. Contacta directo por WhatsApp.",
     images: [
       {
-        url: "/cubagarage.png",
+        url: "/cubamecanica.png",
         width: 1200,
         height: 630,
-        alt: "Cuba Garage",
+        alt: "Cuba Mecánica",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Cuba Garage — Repuestos y servicios automotrices en Cuba",
+    title: "Cuba Mecánica — Repuestos y servicios automotrices en Cuba",
     description:
       "Encuentra repuestos automotrices y servicios cerca de ti en Cuba.",
-    images: ["/cubagarage.png"],
+    images: ["/cubamecanica.png"],
   },
   robots: {
     index: true,
@@ -91,9 +91,9 @@ export const metadata: Metadata = {
 const organizationJsonLd = {
   "@context": "https://schema.org",
   "@type": "Organization",
-  name: "Cuba Garage",
+  name: "Cuba Mecánica",
   url: siteUrl,
-  logo: `${siteUrl}/cubagarage.png`,
+  logo: `${siteUrl}/cubamecanica.png`,
   description:
     "Plataforma cubana para encontrar repuestos automotrices y servicios (mecánicos, torneros, electricistas) cerca de ti.",
   areaServed: { "@type": "Country", name: "Cuba" },
@@ -103,7 +103,7 @@ const organizationJsonLd = {
 const websiteJsonLd = {
   "@context": "https://schema.org",
   "@type": "WebSite",
-  name: "Cuba Garage",
+  name: "Cuba Mecánica",
   url: siteUrl,
   inLanguage: "es-CU",
   potentialAction: {

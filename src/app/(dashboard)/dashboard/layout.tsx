@@ -7,7 +7,7 @@ import { getUserStore } from "@/lib/queries/store";
 import { SubscriptionBanner } from "@/app/_components/subscription-banner";
 
 export const metadata: Metadata = {
-  title: { default: "Panel", template: "%s | FIXCAR" },
+  title: { default: "Panel", template: "%s | Cuba Mecánica" },
   robots: { index: false, follow: false },
 };
 
@@ -148,8 +148,8 @@ export default async function DashboardLayout({
         {/* Logo */}
         <Link href="/dashboard" className="flex items-center border-b border-zinc-800 px-6 py-5">
           <img
-            src="/cubagarage.png"
-            alt="Cuba Garage"
+            src="/cubamecanica.png"
+            alt="Cuba Mecánica"
             className="h-10 w-auto object-contain"
           />
         </Link>

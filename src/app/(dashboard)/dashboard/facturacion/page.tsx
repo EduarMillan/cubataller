@@ -115,7 +115,7 @@ export default async function MiPlanPage({
       (subStatus === "active" && daysLeft !== null && daysLeft <= 15));
 
   const whatsappUrl = adminWhatsapp
-    ? `https://wa.me/${adminWhatsapp}?text=${encodeURIComponent("Hola, tengo una consulta sobre mi suscripción en FIXCAR.")}`
+    ? `https://wa.me/${adminWhatsapp}?text=${encodeURIComponent("Hola, tengo una consulta sobre mi suscripción en Cuba Mecánica.")}`
     : null;
 
   return (

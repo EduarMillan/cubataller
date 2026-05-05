@@ -72,7 +72,7 @@ export function SubscriptionBanner({
   const { phase, daysLeft } = getPhase(status, trialEndsAt, periodEndsAt, gracePeriodDays);
 
   const whatsappUrl = adminWhatsapp
-    ? `https://wa.me/${adminWhatsapp}?text=${encodeURIComponent("Hola, me interesa renovar mi suscripción en FIXCAR. ¿Cuáles son los pasos para realizar el pago?")}`
+    ? `https://wa.me/${adminWhatsapp}?text=${encodeURIComponent("Hola, me interesa renovar mi suscripción en Cuba Mecánica. ¿Cuáles son los pasos para realizar el pago?")}`
     : null;
 
   // No banner for users without trial info

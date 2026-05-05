@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://cubagarage.cu";
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://cubamecanica.com";
 
 export const revalidate = 3600;
 

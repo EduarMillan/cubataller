@@ -4,7 +4,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { logout } from "@/app/(auth)/_actions";
 
 export const metadata: Metadata = {
-  title: { default: "Mi servicio", template: "%s | FIXCAR" },
+  title: { default: "Mi servicio", template: "%s | Cuba Mecánica" },
   robots: { index: false, follow: false },
 };
 
@@ -22,8 +22,8 @@ export default async function ServiceLayout({
         <div className="mx-auto flex max-w-4xl items-center justify-between px-4 py-3 sm:px-6 sm:py-4">
           <Link href="/" className="flex items-center">
             <img
-              src="/cubagarage.png"
-              alt="Cuba Garage"
+              src="/cubamecanica.png"
+              alt="Cuba Mecánica"
               className="h-10 w-auto object-contain sm:h-11"
             />
           </Link>

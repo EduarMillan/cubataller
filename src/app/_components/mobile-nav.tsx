@@ -88,8 +88,8 @@ export function MobileHeader({
     <header className="flex items-center justify-between border-b border-zinc-800 bg-zinc-950 px-4 py-3 md:hidden">
       <Link href="/dashboard" className="flex items-center">
         <img
-          src="/cubagarage.png"
-          alt="Cuba Garage"
+          src="/cubamecanica.png"
+          alt="Cuba Mecánica"
           className="h-9 w-auto object-contain"
         />
       </Link>

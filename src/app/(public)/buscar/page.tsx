@@ -21,6 +21,8 @@ export const metadata: Metadata = {
   },
 };
 
+const PAGE_SIZE = 40;
+
 export default async function BuscarPage({
   searchParams,
 }: {
@@ -32,10 +34,15 @@ export default async function BuscarPage({
     provincia?: string;
     municipio?: string;
     orden?: string;
+    page?: string;
   }>;
 }) {
-  const { marca, modelo, anio, q, provincia, municipio, orden } = await searchParams;
-  const hasFilters = marca || modelo || anio || q || provincia || municipio;
+  const { marca, modelo, anio, q, provincia, municipio, orden, page } = await searchParams;
+  const hasFilters = !!(marca || modelo || anio || q || provincia || municipio);
+
+  const pageNum = Math.max(1, parseInt(page ?? "1", 10) || 1);
+  const from = (pageNum - 1) * PAGE_SIZE;
+  const to = from + PAGE_SIZE - 1;
 
   type Part = {
     id: string;
@@ -53,80 +60,87 @@ export default async function BuscarPage({
   };
 
   let parts: Part[] = [];
-  let storePhones: Record<string, string | null> = {};
-  let storeLocations: Record<string, { provincia: string | null; municipio: string | null; direccion: string | null; storeName: string | null; storeSlug: string | null; logoUrl: string | null }> = {};
+  let totalCount = 0;
+  const storePhones: Record<string, string | null> = {};
+  const storeLocations: Record<string, { provincia: string | null; municipio: string | null; direccion: string | null; storeName: string | null; storeSlug: string | null; logoUrl: string | null }> = {};
 
-  if (hasFilters) {
-    const supabase = await createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
 
-    // Build parts query — we join store info for location filtering
-    let query = supabase
-      .from("parts")
-      .select(
-        "id, sku, name, brand, vehicle_make, vehicle_model, vehicle_year_from, vehicle_year_to, price, quantity_on_hand, image_urls, store_id, stores!inner(name, slug, provincia, municipio, direccion, whatsapp_number, logo_url, is_active)",
-      )
-      .eq("is_public", true)
-      .eq("is_active", true)
-      .eq("stores.is_active", true)
-      .gte("quantity_on_hand", 0)
-      .order("name")
-      .limit(80);
+  // Build parts query — we join store info for location filtering
+  let query = supabase
+    .from("parts")
+    .select(
+      "id, sku, name, brand, vehicle_make, vehicle_model, vehicle_year_from, vehicle_year_to, price, quantity_on_hand, image_urls, store_id, stores!inner(name, slug, provincia, municipio, direccion, whatsapp_number, logo_url, is_active)",
+      { count: "exact" },
+    )
+    .eq("is_public", true)
+    .eq("is_active", true)
+    .eq("stores.is_active", true)
+    .gte("quantity_on_hand", 0);
 
-    if (marca) query = query.ilike("vehicle_make", `%${marca}%`);
-    if (modelo) query = query.ilike("vehicle_model", `%${modelo}%`);
-    if (anio) {
-      const year = parseInt(anio, 10);
-      query = query.lte("vehicle_year_from", year).gte("vehicle_year_to", year);
-    }
-    if (q) query = query.ilike("name", `%${q}%`);
-
-    // Location filters on the store join
-    if (provincia) query = query.eq("stores.provincia", provincia);
-    if (municipio) query = query.eq("stores.municipio", municipio);
-
-    const { data } = await query;
-
-    // Extract parts and store info from the joined result
-    const raw = (data ?? []) as unknown as Array<
-      Part & {
-        stores: { name: string; slug: string; provincia: string | null; municipio: string | null; direccion: string | null; whatsapp_number: string | null; logo_url: string | null; is_active: boolean };
-      }
-    >;
-
-    for (const row of raw) {
-      const { stores: storeInfo, ...part } = row;
-      parts.push(part);
-      storeLocations[part.store_id] = {
-        provincia: storeInfo.provincia,
-        municipio: storeInfo.municipio,
-        direccion: storeInfo.direccion,
-        storeName: storeInfo.name,
-        storeSlug: storeInfo.slug,
-        logoUrl: storeInfo.logo_url,
-      };
-      storePhones[part.store_id] = storeInfo.whatsapp_number;
-    }
-
-    // Sort results based on selected criteria
-    if (orden === "precio_asc") {
-      parts.sort((a, b) => {
-        if (a.price == null && b.price == null) return 0;
-        if (a.price == null) return 1;  // sin precio al final
-        if (b.price == null) return -1;
-        return Number(a.price) - Number(b.price);
-      });
-    } else if (orden === "precio_desc") {
-      parts.sort((a, b) => {
-        if (a.price == null && b.price == null) return 0;
-        if (a.price == null) return 1;
-        if (b.price == null) return -1;
-        return Number(b.price) - Number(a.price);
-      });
-    } else if (orden === "stock") {
-      parts.sort((a, b) => b.quantity_on_hand - a.quantity_on_hand);
-    }
-    // default: name order from DB query
+  // Apply sort at the DB level so pagination is consistent
+  if (orden === "precio_asc") {
+    query = query.order("price", { ascending: true, nullsFirst: false });
+  } else if (orden === "precio_desc") {
+    query = query.order("price", { ascending: false, nullsFirst: false });
+  } else if (orden === "stock") {
+    query = query.order("quantity_on_hand", { ascending: false });
+  } else {
+    query = query.order("name");
   }
+
+  if (marca) query = query.ilike("vehicle_make", `%${marca}%`);
+  if (modelo) query = query.ilike("vehicle_model", `%${modelo}%`);
+  if (anio) {
+    const year = parseInt(anio, 10);
+    query = query.lte("vehicle_year_from", year).gte("vehicle_year_to", year);
+  }
+  if (q) query = query.ilike("name", `%${q}%`);
+
+  // Location filters on the store join
+  if (provincia) query = query.eq("stores.provincia", provincia);
+  if (municipio) query = query.eq("stores.municipio", municipio);
+
+  const { data, count } = await query.range(from, to);
+  totalCount = count ?? 0;
+
+  // Extract parts and store info from the joined result
+  const raw = (data ?? []) as unknown as Array<
+    Part & {
+      stores: { name: string; slug: string; provincia: string | null; municipio: string | null; direccion: string | null; whatsapp_number: string | null; logo_url: string | null; is_active: boolean };
+    }
+  >;
+
+  for (const row of raw) {
+    const { stores: storeInfo, ...part } = row;
+    parts.push(part);
+    storeLocations[part.store_id] = {
+      provincia: storeInfo.provincia,
+      municipio: storeInfo.municipio,
+      direccion: storeInfo.direccion,
+      storeName: storeInfo.name,
+      storeSlug: storeInfo.slug,
+      logoUrl: storeInfo.logo_url,
+    };
+    storePhones[part.store_id] = storeInfo.whatsapp_number;
+  }
+
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+  const currentPage = Math.min(pageNum, totalPages);
+
+  const buildPageHref = (target: number) => {
+    const params = new URLSearchParams();
+    if (marca) params.set("marca", marca);
+    if (modelo) params.set("modelo", modelo);
+    if (anio) params.set("anio", anio);
+    if (q) params.set("q", q);
+    if (provincia) params.set("provincia", provincia);
+    if (municipio) params.set("municipio", municipio);
+    if (orden) params.set("orden", orden);
+    if (target > 1) params.set("page", String(target));
+    const qs = params.toString();
+    return qs ? `/buscar?${qs}` : "/buscar";
+  };
 
   const storageBase = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/parts-images/`;
   const logoBase = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/store-logos/`;
@@ -234,7 +248,7 @@ export default async function BuscarPage({
         )}
 
         {/* Results */}
-        {hasFilters && parts.length === 0 && (
+        {totalCount === 0 && (
           <div className="flex flex-col items-center rounded-lg border-2 border-dashed border-zinc-800 bg-zinc-900/40 p-12 text-center">
             <div className="rounded-md bg-zinc-800 p-4 text-zinc-500">
               <svg className="h-10 w-10" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
@@ -243,18 +257,25 @@ export default async function BuscarPage({
             </div>
             <h3 className="mt-4 text-base font-semibold">Sin resultados</h3>
             <p className="mt-1 text-sm text-muted">
-              No se encontraron repuestos con esos filtros.
-              {(provincia || municipio) && " Intenta ampliar la búsqueda eliminando el filtro de ubicación."}
-              {!provincia && !municipio && " Intenta con otros términos."}
+              {hasFilters ? (
+                <>
+                  No se encontraron repuestos con esos filtros.
+                  {(provincia || municipio) && " Intenta ampliar la búsqueda eliminando el filtro de ubicación."}
+                  {!provincia && !municipio && " Intenta con otros términos."}
+                </>
+              ) : (
+                "Aún no hay piezas publicadas."
+              )}
             </p>
           </div>
         )}
 
-        {parts.length > 0 && (
+        {totalCount > 0 && (
           <>
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-sm text-muted">
-                {parts.length} resultado{parts.length !== 1 ? "s" : ""} encontrado{parts.length !== 1 ? "s" : ""}
+                {totalCount} resultado{totalCount !== 1 ? "s" : ""} encontrado{totalCount !== 1 ? "s" : ""}
+                {totalPages > 1 && ` · Página ${currentPage} de ${totalPages}`}
               </p>
               <div className="flex flex-wrap items-center gap-2">
                 <EnableLocationButton />
@@ -399,23 +420,47 @@ export default async function BuscarPage({
                 );
               })}
             </div>
-          </>
-        )}
 
-        {!hasFilters && (
-          <div className="flex flex-col items-center rounded-lg border-2 border-dashed border-zinc-800 bg-zinc-900/40 p-12 text-center">
-            <div className="rounded-md bg-orange-500/10 p-4 text-orange-400 ring-1 ring-orange-500/20">
-              <svg className="h-10 w-10" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
-              </svg>
-            </div>
-            <h3 className="mt-4 text-base font-semibold">
-              Busca tu repuesto
-            </h3>
-            <p className="mt-1 text-sm text-muted">
-              Selecciona tu provincia y municipio para ver resultados cerca de ti, o usa los filtros de marca, modelo y año.
-            </p>
-          </div>
+            {totalPages > 1 && (
+              <nav
+                aria-label="Paginación"
+                className="mt-2 flex flex-col items-center gap-3 sm:flex-row sm:justify-between"
+              >
+                <p className="text-xs text-muted">
+                  Mostrando {from + 1}–{Math.min(from + parts.length, totalCount)} de {totalCount}
+                </p>
+                <div className="flex items-center gap-2">
+                  {currentPage > 1 ? (
+                    <Link
+                      href={buildPageHref(currentPage - 1)}
+                      className="rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-200 hover:border-orange-500 hover:text-orange-300"
+                    >
+                      ← Anterior
+                    </Link>
+                  ) : (
+                    <span className="cursor-not-allowed rounded-md border border-zinc-800 bg-zinc-900/50 px-3 py-2 text-sm text-zinc-600">
+                      ← Anterior
+                    </span>
+                  )}
+                  <span className="px-2 text-sm text-zinc-300">
+                    {currentPage} / {totalPages}
+                  </span>
+                  {currentPage < totalPages ? (
+                    <Link
+                      href={buildPageHref(currentPage + 1)}
+                      className="rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-200 hover:border-orange-500 hover:text-orange-300"
+                    >
+                      Siguiente →
+                    </Link>
+                  ) : (
+                    <span className="cursor-not-allowed rounded-md border border-zinc-800 bg-zinc-900/50 px-3 py-2 text-sm text-zinc-600">
+                      Siguiente →
+                    </span>
+                  )}
+                </div>
+              </nav>
+            )}
+          </>
         )}
         </DistancesProvider>
       </main>

@@ -18,6 +18,30 @@ async function assertAdmin() {
   return user;
 }
 
+// The next billing period starts from whichever is latest: the current period
+// end, the trial end (still in the future), or now. This way a customer who
+// pays before their period/trial expires keeps the remaining days instead of
+// losing them.
+function computeNextPeriod(sub: {
+  current_period_ends_at?: string | null;
+  trial_ends_at?: string | null;
+}) {
+  const now = new Date();
+  const candidates: Date[] = [now];
+  if (sub.current_period_ends_at) {
+    const d = new Date(sub.current_period_ends_at);
+    if (d > now) candidates.push(d);
+  }
+  if (sub.trial_ends_at) {
+    const d = new Date(sub.trial_ends_at);
+    if (d > now) candidates.push(d);
+  }
+  const periodStart = new Date(Math.max(...candidates.map((d) => d.getTime())));
+  const periodEnd = new Date(periodStart);
+  periodEnd.setMonth(periodEnd.getMonth() + 1);
+  return { periodStart, periodEnd };
+}
+
 export async function toggleStoreActive(formData: FormData) {
   await assertAdmin();
 
@@ -72,12 +96,15 @@ export async function updateSubscriptionStatus(formData: FormData) {
 
   const updateData: Record<string, unknown> = { status: newStatus };
 
-  // If activating, set current period starting now
   if (newStatus === "active") {
-    const now = new Date();
-    const periodEnd = new Date(now);
-    periodEnd.setMonth(periodEnd.getMonth() + 1);
-    updateData.current_period_starts_at = now.toISOString();
+    const { data: sub } = await admin
+      .from("store_subscriptions")
+      .select("current_period_ends_at, trial_ends_at")
+      .eq("id", subscriptionId)
+      .single();
+
+    const { periodStart, periodEnd } = computeNextPeriod(sub ?? {});
+    updateData.current_period_starts_at = periodStart.toISOString();
     updateData.current_period_ends_at = periodEnd.toISOString();
   }
 
@@ -111,23 +138,17 @@ export async function approveReceipt(formData: FormData) {
   if (subscriptionId) {
     const { data: sub } = await admin
       .from("store_subscriptions")
-      .select("status, current_period_ends_at")
+      .select("status, current_period_ends_at, trial_ends_at")
       .eq("id", subscriptionId)
       .single();
 
-    const now = new Date();
-    const baseDate =
-      sub?.current_period_ends_at && new Date(sub.current_period_ends_at) > now
-        ? new Date(sub.current_period_ends_at)
-        : now;
-    const periodEnd = new Date(baseDate);
-    periodEnd.setMonth(periodEnd.getMonth() + 1);
+    const { periodStart, periodEnd } = computeNextPeriod(sub ?? {});
 
     await admin
       .from("store_subscriptions")
       .update({
         status: "active",
-        current_period_starts_at: baseDate.toISOString(),
+        current_period_starts_at: periodStart.toISOString(),
         current_period_ends_at: periodEnd.toISOString(),
       })
       .eq("id", subscriptionId);
@@ -197,6 +218,18 @@ export async function deleteServiceAdmin(formData: FormData) {
   revalidatePath("/servicios");
 }
 
+export async function suspendExpiredStores() {
+  await assertAdmin();
+
+  const admin = createSupabaseAdminClient();
+  const { error } = await admin.rpc("suspend_expired_stores");
+
+  if (error) {
+    throw new Error(`Error al suspender tiendas vencidas: ${error.message}`);
+  }
+  revalidatePath("/admin");
+}
+
 export async function renewSubscription(formData: FormData) {
   await assertAdmin();
 
@@ -204,23 +237,13 @@ export async function renewSubscription(formData: FormData) {
 
   const admin = createSupabaseAdminClient();
 
-  // Fetch current subscription to extend from current period end
   const { data: sub } = await admin
     .from("store_subscriptions")
-    .select("current_period_ends_at")
+    .select("current_period_ends_at, trial_ends_at")
     .eq("id", subscriptionId)
     .single();
 
-  // Extend from current period end or from now if no period set
-  const baseDate = sub?.current_period_ends_at
-    ? new Date(sub.current_period_ends_at)
-    : new Date();
-
-  const now = new Date();
-  // If the period already ended, start from now instead
-  const periodStart = baseDate > now ? baseDate : now;
-  const periodEnd = new Date(periodStart);
-  periodEnd.setMonth(periodEnd.getMonth() + 1);
+  const { periodStart, periodEnd } = computeNextPeriod(sub ?? {});
 
   await admin
     .from("store_subscriptions")

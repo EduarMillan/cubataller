@@ -1,5 +1,5 @@
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import { toggleStoreActive, updateSubscriptionStatus, updatePlatformSettings, renewSubscription, approveReceipt, rejectReceipt, toggleServiceActive, deleteServiceAdmin } from "./_actions";
+import { toggleStoreActive, updateSubscriptionStatus, updatePlatformSettings, renewSubscription, approveReceipt, rejectReceipt, toggleServiceActive, deleteServiceAdmin, suspendExpiredStores } from "./_actions";
 import { PROVINCIA_MAP } from "@/lib/cuba-locations";
 import { SERVICE_CATEGORY_MAP } from "@/lib/service-categories";
 import { ConfirmDeleteForm } from "./_confirm-delete-form";
@@ -256,6 +256,23 @@ export default async function AdminPage({
             </p>
           </div>
         </form>
+
+        <div className="mt-5 flex flex-col gap-2 rounded-md border border-zinc-800 bg-zinc-900/40 p-3 sm:flex-row sm:items-center sm:justify-between sm:p-4">
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-zinc-200">Suspensión automática de tiendas vencidas</p>
+            <p className="mt-0.5 text-xs text-zinc-500">
+              Desactiva las tiendas cuyo trial o período de pago lleve más de <span className="font-semibold text-zinc-300">{gracePeriodDays} día{gracePeriodDays !== 1 ? "s" : ""}</span> vencido. Las tiendas con comprobante en revisión no se suspenden.
+            </p>
+          </div>
+          <form action={suspendExpiredStores}>
+            <button
+              type="submit"
+              className="w-full rounded-md border border-red-500/40 bg-red-500/10 px-4 py-2 text-xs font-bold uppercase tracking-wider text-red-300 hover:bg-red-500/20 sm:w-auto [font-family:var(--font-space-grotesk),system-ui,sans-serif]"
+            >
+              Ejecutar ahora
+            </button>
+          </form>
+        </div>
       </div>
 
       {/* ── Pending receipts ── */}

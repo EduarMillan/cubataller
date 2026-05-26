@@ -12,7 +12,7 @@ const darkInputClass =
 export default async function Home() {
   const supabase = await createSupabaseServerClient();
 
-  const [storesResult, partsResult, servicesResult, settingsResult] =
+  const [storesResult, partsResult, servicesResult, settingsResult, latestPartsResult] =
     await Promise.all([
       supabase
         .from("stores")
@@ -33,6 +33,17 @@ export default async function Home() {
         .select("trial_days")
         .eq("id", true)
         .single(),
+      supabase
+        .from("parts")
+        .select(
+          "id, name, brand, vehicle_make, vehicle_model, vehicle_year_from, vehicle_year_to, price, image_urls, created_at, stores!inner(name, slug, municipio, is_active)",
+        )
+        .eq("is_active", true)
+        .eq("is_public", true)
+        .eq("stores.is_active", true)
+        .gt("quantity_on_hand", 0)
+        .order("created_at", { ascending: false })
+        .limit(20),
     ]);
 
   const trialDays = settingsResult.data?.trial_days ?? 90;
@@ -42,6 +53,22 @@ export default async function Home() {
   const municipioCount = new Set(
     (storesResult.data ?? []).map((s) => s.municipio).filter(Boolean),
   ).size;
+
+  const latestParts = (latestPartsResult.data ?? []) as unknown as Array<{
+    id: string;
+    name: string;
+    brand: string;
+    vehicle_make: string;
+    vehicle_model: string;
+    vehicle_year_from: number | null;
+    vehicle_year_to: number | null;
+    price: number | null;
+    image_urls: string[] | null;
+    created_at: string;
+    stores: { name: string; slug: string; municipio: string | null };
+  }>;
+
+  const partsStorageBase = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/parts-images/`;
 
   return (
     <div className="flex flex-1 flex-col bg-zinc-950 text-zinc-100 [font-family:var(--font-geist-sans),system-ui,sans-serif]">
@@ -264,6 +291,92 @@ export default async function Home() {
           </div>
         </div>
       </section>
+
+      {/* ── Últimas piezas publicadas ── */}
+      {latestParts.length > 0 && (
+        <section className="bg-zinc-950 pt-16 pb-12 sm:pt-32 sm:pb-16">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-orange-400 [font-family:var(--font-space-grotesk),system-ui,sans-serif]">
+                  Recién publicadas
+                </span>
+                <h2 className="mt-2 text-2xl font-bold tracking-tight text-white sm:text-4xl [font-family:var(--font-space-grotesk),system-ui,sans-serif]">
+                  ÚLTIMAS PIEZAS DISPONIBLES
+                </h2>
+                <p className="mt-2 text-sm text-zinc-400 sm:text-base">
+                  Lo más nuevo subido por las tiendas registradas en Cuba Mecánica.
+                </p>
+              </div>
+              <Link
+                href="/buscar"
+                className="inline-flex w-fit items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-orange-400 hover:text-orange-300 sm:text-sm [font-family:var(--font-space-grotesk),system-ui,sans-serif]"
+              >
+                Ver todas
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+                </svg>
+              </Link>
+            </div>
+
+            <div className="mt-6 grid grid-cols-2 gap-3 sm:mt-8 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
+              {latestParts.map((part) => {
+                const imgs = part.image_urls ?? [];
+                return (
+                  <Link
+                    key={part.id}
+                    href={`/pieza/${part.id}`}
+                    className="group flex flex-col overflow-hidden rounded-lg border border-zinc-800 bg-zinc-900/60 shadow-md transition-all hover:border-orange-500/50 hover:shadow-orange-500/10"
+                  >
+                    {imgs.length > 0 ? (
+                      <div className="relative aspect-square w-full overflow-hidden bg-zinc-800 sm:aspect-[4/3]">
+                        <img
+                          src={`${partsStorageBase}${imgs[0]}`}
+                          alt={part.name}
+                          className="h-full w-full object-cover transition-transform group-hover:scale-105"
+                        />
+                      </div>
+                    ) : (
+                      <div className="flex aspect-square w-full items-center justify-center bg-zinc-800 text-zinc-600 sm:aspect-[4/3]">
+                        <svg className="h-10 w-10" fill="none" viewBox="0 0 24 24" strokeWidth={1} stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0 0 22.5 18.75V5.25a2.25 2.25 0 0 0-2.25-2.25H3.75A2.25 2.25 0 0 0 1.5 5.25v13.5A2.25 2.25 0 0 0 3.75 21Z" />
+                        </svg>
+                      </div>
+                    )}
+                    <div className="flex flex-1 flex-col gap-1 p-3 sm:p-4">
+                      <div className="flex items-start justify-between gap-1.5">
+                        <h3 className="line-clamp-2 text-xs font-semibold text-zinc-100 sm:text-sm">{part.name}</h3>
+                        <span className="shrink-0 rounded-md bg-orange-500/15 px-1.5 py-0.5 text-[9px] font-semibold text-orange-300 ring-1 ring-orange-500/30 sm:px-2 sm:text-[10px]">
+                          {part.brand}
+                        </span>
+                      </div>
+                      <p className="line-clamp-1 text-[11px] text-zinc-500 sm:text-xs">
+                        {part.vehicle_make} {part.vehicle_model}
+                        {part.vehicle_year_from && ` (${part.vehicle_year_from}–${part.vehicle_year_to})`}
+                      </p>
+                      <p className="line-clamp-1 text-[10px] text-zinc-500 sm:text-[11px]">
+                        {part.stores.name}
+                        {part.stores.municipio ? ` · ${part.stores.municipio}` : ""}
+                      </p>
+                      <div className="mt-1 pt-2 border-t border-zinc-800 sm:mt-2">
+                        {part.price != null ? (
+                          <p className="text-base font-bold text-orange-400 sm:text-lg [font-family:var(--font-space-grotesk),system-ui,sans-serif]">
+                            ${Number(part.price).toLocaleString("es-CU")}
+                          </p>
+                        ) : (
+                          <span className="inline-block rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-medium text-amber-300 ring-1 ring-amber-500/30">
+                            Consultar precio
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* ── Dual CTA: Crear tienda / Registrar servicio ── */}
       <section className="bg-zinc-950 pt-12 pb-16 sm:pt-28 sm:pb-20">

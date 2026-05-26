@@ -108,25 +108,8 @@ export default async function CrearTiendaPage({
               placeholder="Ej: Repuestos El Motor"
               className="w-full rounded-md border border-zinc-700 bg-zinc-900 px-4 py-2.5 text-sm text-zinc-100 outline-none transition-colors placeholder:text-zinc-500 focus:border-orange-500 focus:ring-2 focus:ring-orange-500/30"
             />
-          </div>
-
-          <div className="space-y-1.5">
-            <label htmlFor="slug" className="flex items-center text-sm font-medium">
-              Identificador (URL)
-              <InfoTip content="Un identificador único para tu tienda en la plataforma. Solo letras minúsculas, números y guiones. Ej: mi-tienda-123" />
-            </label>
-            <input
-              id="slug"
-              name="slug"
-              type="text"
-              required
-              maxLength={60}
-              pattern="^[a-z0-9]+(?:-[a-z0-9]+)*$"
-              placeholder="ej: repuestos-el-motor"
-              className="w-full rounded-md border border-zinc-700 bg-zinc-900 px-4 py-2.5 text-sm text-zinc-100 outline-none transition-colors placeholder:text-zinc-500 focus:border-orange-500 focus:ring-2 focus:ring-orange-500/30"
-            />
             <p className="text-xs text-muted">
-              Solo letras minúsculas, números y guiones.
+              La URL pública de tu tienda se genera automáticamente a partir del nombre (ej: <span className="font-mono text-zinc-400">repuestos-el-motor</span>). Podrás editarla luego en <strong>Configuración</strong>.
             </p>
           </div>
 

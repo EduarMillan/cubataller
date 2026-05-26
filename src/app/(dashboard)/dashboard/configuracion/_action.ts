@@ -5,12 +5,14 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getUserStore } from "@/lib/queries/store";
 import { normalizeWhatsapp } from "@/lib/phone";
+import { isValidSlug } from "@/lib/slug";
 
 export async function updateStore(formData: FormData) {
   const store = await getUserStore();
   if (!store) redirect("/login");
 
   const name = (formData.get("name") as string).trim();
+  const slug = (formData.get("slug") as string | null)?.trim().toLowerCase() || null;
   const provincia = (formData.get("provincia") as string | null)?.trim() || null;
   const municipio = (formData.get("municipio") as string | null)?.trim() || null;
   const direccion = (formData.get("direccion") as string | null)?.trim() || null;
@@ -26,9 +28,29 @@ export async function updateStore(formData: FormData) {
     redirect("/dashboard/configuracion?error=Debes seleccionar tu provincia y municipio");
   }
 
+  if (slug && !isValidSlug(slug)) {
+    redirect(
+      "/dashboard/configuracion?error=El identificador solo puede tener letras minúsculas, números y guiones (máx. 60 caracteres)",
+    );
+  }
+
+  const admin = createSupabaseAdminClient();
+
+  // If the slug changed, verify it's still unique
+  if (slug && slug !== store.storeSlug) {
+    const { data: clash } = await admin
+      .from("stores")
+      .select("id")
+      .eq("slug", slug)
+      .neq("id", store.storeId)
+      .maybeSingle();
+    if (clash) {
+      redirect("/dashboard/configuracion?error=Ese identificador ya está en uso por otra tienda");
+    }
+  }
+
   // WhatsApp must be unique across stores and service_providers (excluding this store itself)
   if (whatsapp) {
-    const admin = createSupabaseAdminClient();
     const { data: otherStore } = await admin
       .from("stores")
       .select("id")
@@ -50,23 +72,29 @@ export async function updateStore(formData: FormData) {
 
   const supabase = await createSupabaseServerClient();
 
+  const updatePayload: Record<string, unknown> = {
+    name,
+    provincia,
+    municipio,
+    direccion,
+    whatsapp_number: whatsapp,
+    description,
+    logo_url: logoUrl,
+  };
+  if (slug) updatePayload.slug = slug;
+
   const { error } = await supabase
     .from("stores")
-    .update({
-      name,
-      provincia,
-      municipio,
-      direccion,
-      whatsapp_number: whatsapp,
-      description,
-      logo_url: logoUrl,
-    })
+    .update(updatePayload)
     .eq("id", store.storeId);
 
   if (error) {
-    const msg = error.code === "23505" && error.message.includes("whatsapp")
-      ? "Este número de WhatsApp ya está registrado"
-      : error.message;
+    let msg = error.message;
+    if (error.code === "23505") {
+      msg = error.message.includes("slug")
+        ? "Ese identificador ya está en uso por otra tienda"
+        : "Este número de WhatsApp ya está registrado";
+    }
     redirect(`/dashboard/configuracion?error=${encodeURIComponent(msg)}`);
   }
 

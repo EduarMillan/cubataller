@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { normalizeWhatsapp } from "@/lib/phone";
+import { generateUniqueStoreSlug } from "@/lib/slug";
 
 export async function createStore(formData: FormData) {
   const supabase = await createSupabaseServerClient();
@@ -14,25 +15,18 @@ export async function createStore(formData: FormData) {
   if (!user) redirect("/login");
 
   const name = (formData.get("name") as string).trim();
-  const slug = (formData.get("slug") as string).trim().toLowerCase();
   const provincia = (formData.get("provincia") as string | null)?.trim() || null;
   const municipio = (formData.get("municipio") as string | null)?.trim() || null;
   const direccion = (formData.get("direccion") as string | null)?.trim() || null;
   const whatsapp = normalizeWhatsapp(formData.get("whatsapp") as string | null);
   const currency = (formData.get("currency") as string | null)?.trim() || "CUP";
 
-  if (!name || !slug) {
-    redirect("/dashboard/crear-tienda?error=Nombre e identificador son obligatorios");
+  if (!name) {
+    redirect("/dashboard/crear-tienda?error=El nombre es obligatorio");
   }
 
   if (!provincia || !municipio) {
     redirect("/dashboard/crear-tienda?error=Debes seleccionar tu provincia y municipio");
-  }
-
-  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) {
-    redirect(
-      "/dashboard/crear-tienda?error=El identificador solo puede tener letras minúsculas, números y guiones",
-    );
   }
 
   // Use admin client to bypass RLS for store bootstrapping.
@@ -69,6 +63,9 @@ export async function createStore(formData: FormData) {
       redirect(`/dashboard/crear-tienda?error=${encodeURIComponent("Este número de WhatsApp ya está registrado en un servicio")}`);
     }
   }
+
+  // Derive the URL slug from the name and ensure it's unique
+  const slug = await generateUniqueStoreSlug(admin, name);
 
   const { data: store, error: storeError } = await admin
     .from("stores")

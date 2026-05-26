@@ -77,14 +77,21 @@ export default async function ConfiguracionPage({
         </div>
 
         <div className="space-y-1.5">
-          <label className="block text-sm font-medium text-muted">
+          <label htmlFor="slug" className="block text-sm font-medium">
             Identificador (URL)
           </label>
-          <p className="rounded-md border border-zinc-700 bg-zinc-800 px-4 py-2.5 text-sm text-zinc-400">
-            {storeData.slug}
-          </p>
+          <input
+            id="slug"
+            name="slug"
+            type="text"
+            required
+            maxLength={60}
+            pattern="^[a-z0-9]+(?:-[a-z0-9]+)*$"
+            defaultValue={storeData.slug}
+            className="w-full rounded-md border border-zinc-700 bg-zinc-900 px-4 py-2.5 text-sm font-mono text-zinc-100 outline-none transition-colors placeholder:text-zinc-500 focus:border-orange-500 focus:ring-2 focus:ring-orange-500/30"
+          />
           <p className="text-xs text-muted">
-            El identificador no se puede cambiar.
+            Solo letras minúsculas, números y guiones. Cambiar el identificador modifica la URL pública de tu tienda y puede romper enlaces compartidos.
           </p>
         </div>
 

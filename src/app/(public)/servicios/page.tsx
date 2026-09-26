@@ -5,6 +5,7 @@ import { SearchLocationSelects } from "@/app/_components/search-location-selects
 import { PublicNavSession } from "@/app/_components/public-nav-session";
 import { SERVICE_CATEGORIES, getServiceCategory, type WeeklyHours } from "@/lib/service-categories";
 import { getOpenStatus } from "@/lib/service-hours";
+import { toSearchTerms } from "@/lib/search-terms";
 import { PROVINCIA_MAP } from "@/lib/cuba-locations";
 import { DistancesProvider } from "@/app/_components/distances-provider";
 import { EnableLocationButton } from "@/app/_components/enable-location-button";
@@ -66,7 +67,14 @@ export default async function ServiciosPage({
   if (categoria) query = query.eq("category", categoria);
   if (provincia) query = query.eq("provincia", provincia);
   if (municipio) query = query.eq("municipio", municipio);
-  if (q) query = query.or(`name.ilike.%${q}%,description.ilike.%${q}%`);
+  // Every word must appear in search_text (name, description, especialidades,
+  // municipio, dirección and category, lowercased and without accents), in any
+  // order. Chained ilike filters are ANDed by PostgREST.
+  if (q) {
+    for (const term of toSearchTerms(q)) {
+      query = query.ilike("search_text", `%${term}%`);
+    }
+  }
 
   const { data } = await query;
   const services = (data ?? []) as ServiceRow[];
@@ -146,7 +154,7 @@ export default async function ServiciosPage({
                 name="q"
                 type="text"
                 defaultValue={q ?? ""}
-                placeholder="Buscar por nombre..."
+                placeholder="Buscar por nombre, especialidad o palabra clave..."
                 className={darkInputClass}
               />
             </div>

@@ -9,6 +9,7 @@ export type ServiceFormValues = {
   slug: string;
   category: string;
   description: string | null;
+  especialidades: string | null;
   whatsapp: string | null;
   provincia: string | null;
   municipio: string | null;
@@ -29,6 +30,7 @@ export function parseServiceForm(formData: FormData): ServiceFormValues {
     slug: ((formData.get("slug") as string) || "").trim().toLowerCase(),
     category: ((formData.get("category") as string) || "").trim(),
     description: ((formData.get("description") as string) || "").trim() || null,
+    especialidades: ((formData.get("especialidades") as string) || "").trim() || null,
     whatsapp: normalizeWhatsapp((formData.get("whatsapp") as string) || ""),
     provincia: ((formData.get("provincia") as string) || "").trim() || null,
     municipio: ((formData.get("municipio") as string) || "").trim() || null,
@@ -108,6 +110,7 @@ export function serviceFormToRow(data: ServiceFormValues) {
     slug: data.slug,
     category: data.category,
     description: data.description,
+    especialidades: data.especialidades,
     whatsapp_number: data.whatsapp,
     provincia: data.provincia,
     municipio: data.municipio,

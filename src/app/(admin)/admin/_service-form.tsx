@@ -8,6 +8,7 @@ export type ServiceFormDefaults = {
   slug?: string | null;
   category?: string | null;
   description?: string | null;
+  especialidades?: string | null;
   whatsapp_number?: string | null;
   provincia?: string | null;
   municipio?: string | null;
@@ -118,6 +119,25 @@ export function ServiceForm({
             placeholder="Qué servicios ofrece el taller, especialidades, años de experiencia, etc."
             className={inputClass}
           />
+        </div>
+
+        <div className="space-y-1.5">
+          <label htmlFor="especialidades" className="block text-sm font-medium">
+            Especialidades / palabras clave (opcional)
+          </label>
+          <input
+            id="especialidades"
+            name="especialidades"
+            type="text"
+            maxLength={300}
+            defaultValue={service?.especialidades ?? ""}
+            placeholder="Ej: motos eléctricas, motorinas, triciclos"
+            className={inputClass}
+          />
+          <p className="text-xs text-muted">
+            Separadas por comas. No se muestran en la ficha: sirven para que el taller aparezca
+            cuando alguien busca esos términos.
+          </p>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">

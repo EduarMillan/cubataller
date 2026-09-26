@@ -181,6 +181,25 @@ export default async function MiServicioPage({
           />
         </div>
 
+        <div className="space-y-1.5">
+          <label htmlFor="especialidades" className="block text-sm font-medium">
+            Especialidades / palabras clave (opcional)
+          </label>
+          <input
+            id="especialidades"
+            name="especialidades"
+            type="text"
+            maxLength={300}
+            defaultValue={service?.especialidades ?? ""}
+            placeholder="Ej: motos eléctricas, motorinas, triciclos"
+            className="w-full rounded-md border border-zinc-700 bg-zinc-900 px-4 py-2.5 text-sm text-zinc-100 outline-none transition-colors placeholder:text-zinc-500 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/30"
+          />
+          <p className="text-xs text-muted">
+            Separadas por comas. No aparecen en tu ficha: sirven para que te encuentren cuando
+            alguien busca esos términos.
+          </p>
+        </div>
+
         <div className="grid gap-4 sm:grid-cols-2">
           <LocationSelects
             defaultProvincia={service?.provincia ?? undefined}

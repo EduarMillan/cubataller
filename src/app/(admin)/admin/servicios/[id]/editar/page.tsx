@@ -19,7 +19,7 @@ export default async function EditarServicioAdminPage({
   const { data: service } = await admin
     .from("service_providers")
     .select(
-      "id, name, slug, category, description, whatsapp_number, provincia, municipio, direccion, hours, is_active, user_id",
+      "id, name, slug, category, description, especialidades, whatsapp_number, provincia, municipio, direccion, hours, is_active, user_id",
     )
     .eq("id", id)
     .maybeSingle();

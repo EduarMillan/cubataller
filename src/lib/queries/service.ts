@@ -7,6 +7,7 @@ export type UserService = {
   slug: string;
   category: string;
   description: string | null;
+  especialidades: string | null;
   whatsappNumber: string | null;
   provincia: string | null;
   municipio: string | null;
@@ -27,7 +28,7 @@ export async function getUserService(): Promise<UserService | null> {
   const { data } = await supabase
     .from("service_providers")
     .select(
-      "id, name, slug, category, description, whatsapp_number, provincia, municipio, direccion, logo_url, hours, is_active",
+      "id, name, slug, category, description, especialidades, whatsapp_number, provincia, municipio, direccion, logo_url, hours, is_active",
     )
     .eq("user_id", user.id)
     .maybeSingle();
@@ -40,6 +41,7 @@ export async function getUserService(): Promise<UserService | null> {
     slug: data.slug as string,
     category: data.category as string,
     description: (data.description as string) || null,
+    especialidades: (data.especialidades as string) || null,
     whatsappNumber: (data.whatsapp_number as string) || null,
     provincia: (data.provincia as string) || null,
     municipio: (data.municipio as string) || null,

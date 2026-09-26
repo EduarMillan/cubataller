@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
+import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
-import { notFound } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { PROVINCIA_MAP } from "@/lib/cuba-locations";
 import { TrackView } from "@/app/_components/track-view";
 import { PublicNavSession } from "@/app/_components/public-nav-session";
 import { PublicNavLinks, PublicNavTabs } from "@/app/_components/public-nav-links";
+
+const PAGE_SIZE = 24;
 
 export async function generateMetadata({
   params,
@@ -40,10 +42,18 @@ export async function generateMetadata({
 
 export default async function TiendaPublicaPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ page?: string }>;
 }) {
   const { slug } = await params;
+  const { page } = await searchParams;
+
+  const pageNum = Math.max(1, parseInt(page ?? "1", 10) || 1);
+  const from = (pageNum - 1) * PAGE_SIZE;
+  const to = from + PAGE_SIZE - 1;
+
   const supabase = await createSupabaseServerClient();
 
   // Fetch store by slug
@@ -56,18 +66,33 @@ export default async function TiendaPublicaPage({
 
   if (!store) notFound();
 
-  // Fetch store's public parts
-  const { data: parts } = await supabase
+  // Fetch store's public parts, one page at a time
+  const { data: parts, count, error: rangeError } = await supabase
     .from("parts")
-    .select("id, sku, name, brand, vehicle_make, vehicle_model, vehicle_year_from, vehicle_year_to, price, quantity_on_hand, image_urls")
+    .select(
+      "id, sku, name, brand, vehicle_make, vehicle_model, vehicle_year_from, vehicle_year_to, price, quantity_on_hand, image_urls",
+      { count: "exact" },
+    )
     .eq("store_id", store.id)
     .eq("is_public", true)
     .eq("is_active", true)
     .gt("quantity_on_hand", 0)
     .order("name")
-    .limit(200);
+    .range(from, to);
 
   const allParts = parts ?? [];
+  const totalCount = count ?? 0;
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+  const currentPage = Math.min(pageNum, totalPages);
+
+  const buildPageHref = (target: number) =>
+    target > 1 ? `/tienda/${slug}?page=${target}` : `/tienda/${slug}`;
+
+  // PostgREST answers a range past the end with 416 and no count, so a stale
+  // ?page= link would render "Sin piezas disponibles" over a full catalogue.
+  if (pageNum > 1 && (rangeError?.code === "PGRST103" || (allParts.length === 0 && totalCount > 0))) {
+    redirect(buildPageHref(1));
+  }
   const provinciaName = store.provincia ? PROVINCIA_MAP.get(store.provincia)?.name : null;
   const storageBase = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/parts-images/`;
 
@@ -185,8 +210,13 @@ export default async function TiendaPublicaPage({
               {/* Stats */}
               <div className="mt-4 flex items-center gap-4 text-sm">
                 <span className="rounded-full bg-accent-light px-3 py-1 font-semibold text-accent">
-                  {allParts.length} pieza{allParts.length !== 1 ? "s" : ""} disponible{allParts.length !== 1 ? "s" : ""}
+                  {totalCount} pieza{totalCount !== 1 ? "s" : ""} disponible{totalCount !== 1 ? "s" : ""}
                 </span>
+                {totalPages > 1 && (
+                  <span className="text-muted">
+                    Página {currentPage} de {totalPages}
+                  </span>
+                )}
               </div>
             </div>
 
@@ -297,6 +327,46 @@ export default async function TiendaPublicaPage({
               );
             })}
           </div>
+        )}
+
+        {totalPages > 1 && (
+          <nav
+            aria-label="Paginación"
+            className="mt-6 flex flex-col items-center gap-3 sm:flex-row sm:justify-between"
+          >
+            <p className="text-xs text-muted">
+              Mostrando {from + 1}–{Math.min(from + allParts.length, totalCount)} de {totalCount}
+            </p>
+            <div className="flex items-center gap-2">
+              {currentPage > 1 ? (
+                <Link
+                  href={buildPageHref(currentPage - 1)}
+                  className="rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-200 hover:border-orange-500 hover:text-orange-300"
+                >
+                  ← Anterior
+                </Link>
+              ) : (
+                <span className="cursor-not-allowed rounded-md border border-zinc-800 bg-zinc-900/50 px-3 py-2 text-sm text-zinc-600">
+                  ← Anterior
+                </span>
+              )}
+              <span className="px-2 text-sm text-zinc-300">
+                {currentPage} / {totalPages}
+              </span>
+              {currentPage < totalPages ? (
+                <Link
+                  href={buildPageHref(currentPage + 1)}
+                  className="rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-200 hover:border-orange-500 hover:text-orange-300"
+                >
+                  Siguiente →
+                </Link>
+              ) : (
+                <span className="cursor-not-allowed rounded-md border border-zinc-800 bg-zinc-900/50 px-3 py-2 text-sm text-zinc-600">
+                  Siguiente →
+                </span>
+              )}
+            </div>
+          </nav>
         )}
       </main>
 

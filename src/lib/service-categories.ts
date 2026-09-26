@@ -21,6 +21,7 @@ export const SERVICE_CATEGORIES: ServiceCategory[] = [
   { code: "gruas_auxilio", label: "Grúas y auxilio mecánico", emoji: "🚛" },
   { code: "lubricentro", label: "Lubricentro", emoji: "🛢️" },
   { code: "scanner_diagnostico", label: "Scanner / diagnóstico electrónico", emoji: "💻" },
+  { code: "otro", label: "Otro servicio", emoji: "🔩" },
 ];
 
 export const SERVICE_CATEGORY_MAP = new Map(

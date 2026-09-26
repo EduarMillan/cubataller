@@ -3,6 +3,7 @@ import Link from "next/link";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { SearchLocationSelects } from "@/app/_components/search-location-selects";
 import { PublicNavSession } from "@/app/_components/public-nav-session";
+import { PublicNavLinks, PublicNavTabs } from "@/app/_components/public-nav-links";
 import { SERVICE_CATEGORIES, getServiceCategory, type WeeklyHours } from "@/lib/service-categories";
 import { getOpenStatus } from "@/lib/service-hours";
 import { toSearchTerms } from "@/lib/search-terms";
@@ -93,16 +94,12 @@ export default async function ServiciosPage({
               className="h-10 w-auto object-contain sm:h-11"
             />
           </Link>
+          <PublicNavLinks active="servicios" />
           <div className="flex items-center gap-2 sm:gap-3">
-            <Link
-              href="/buscar"
-              className="rounded-md px-3 py-2 text-sm font-medium text-zinc-300 hover:text-orange-400"
-            >
-              Repuestos
-            </Link>
             <PublicNavSession variant="dark" />
           </div>
         </div>
+        <PublicNavTabs active="servicios" />
       </nav>
 
       {/* Hero + search */}

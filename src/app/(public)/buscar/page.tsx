@@ -6,6 +6,7 @@ import { SearchLocationSelects } from "@/app/_components/search-location-selects
 import { SortSelect } from "@/app/_components/sort-select";
 import { PROVINCIA_MAP } from "@/lib/cuba-locations";
 import { PublicNavSession } from "@/app/_components/public-nav-session";
+import { PublicNavLinks, PublicNavTabs } from "@/app/_components/public-nav-links";
 import { DistancesProvider } from "@/app/_components/distances-provider";
 import { EnableLocationButton } from "@/app/_components/enable-location-button";
 import { DistanceBadge } from "@/app/_components/distance-badge";
@@ -158,10 +159,12 @@ export default async function BuscarPage({
               className="h-10 w-auto object-contain sm:h-11"
             />
           </Link>
+          <PublicNavLinks active="repuestos" />
           <div className="flex items-center gap-2">
             <PublicNavSession variant="dark" />
           </div>
         </div>
+        <PublicNavTabs active="repuestos" />
       </nav>
 
       <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-4 py-6 sm:gap-8 sm:px-6 sm:py-10">

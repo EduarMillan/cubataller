@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { SearchLocationSelects } from "@/app/_components/search-location-selects";
 import { PublicNavSession } from "@/app/_components/public-nav-session";
+import { PublicNavLinks, PublicNavTabs } from "@/app/_components/public-nav-links";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 const HERO_IMAGE =
@@ -82,24 +83,12 @@ export default async function Home() {
               className="h-10 w-auto object-contain sm:h-11"
             />
           </Link>
-          <div className="hidden items-center gap-6 md:flex [font-family:var(--font-space-grotesk),system-ui,sans-serif]">
-            <Link
-              href="/buscar"
-              className="text-sm font-semibold uppercase tracking-wider text-zinc-300 transition-colors hover:text-orange-500"
-            >
-              Repuestos
-            </Link>
-            <Link
-              href="/servicios"
-              className="text-sm font-semibold uppercase tracking-wider text-zinc-300 transition-colors hover:text-orange-500"
-            >
-              Servicios
-            </Link>
-          </div>
+          <PublicNavLinks />
           <div className="flex items-center gap-2 sm:gap-3">
             <PublicNavSession variant="dark" />
           </div>
         </div>
+        <PublicNavTabs />
       </nav>
 
       {/* ── Hero with engine background ── */}

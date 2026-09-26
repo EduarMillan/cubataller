@@ -26,23 +26,26 @@ export function isValidSlug(slug: string): boolean {
 }
 
 /**
- * Generates a slug for `stores` derived from `name` that is guaranteed to be
- * unique across the table. Picks `base` if free, otherwise tries
- * `base-2`, `base-3`, ... If the user is editing an existing row, pass its id
- * via `excludeStoreId` so the lookup ignores their own row.
+ * Generates a slug for `table` derived from `name` that is guaranteed to be
+ * unique across it. Picks `base` if free, otherwise tries `base-2`, `base-3`,
+ * ... If an existing row is being edited, pass its id via `excludeId` so the
+ * lookup ignores that row's own slug.
  */
-export async function generateUniqueStoreSlug(
+async function generateUniqueSlug(
   admin: SupabaseClient,
+  table: string,
   name: string,
-  excludeStoreId?: string,
+  fallbackPrefix: string,
+  excludeId?: string,
 ): Promise<string> {
-  const base = slugify(name) || `tienda-${Math.random().toString(36).slice(2, 8)}`;
+  const base =
+    slugify(name) || `${fallbackPrefix}-${Math.random().toString(36).slice(2, 8)}`;
 
   let query = admin
-    .from("stores")
+    .from(table)
     .select("id, slug")
     .or(`slug.eq.${base},slug.like.${base}-%`);
-  if (excludeStoreId) query = query.neq("id", excludeStoreId);
+  if (excludeId) query = query.neq("id", excludeId);
 
   const { data } = await query;
   const taken = new Set((data ?? []).map((row) => row.slug as string));
@@ -59,4 +62,22 @@ export async function generateUniqueStoreSlug(
   }
 
   return `${base.slice(0, 40)}-${Date.now().toString(36)}`;
+}
+
+/** Unique slug for `stores`, derived from the store name. */
+export function generateUniqueStoreSlug(
+  admin: SupabaseClient,
+  name: string,
+  excludeStoreId?: string,
+): Promise<string> {
+  return generateUniqueSlug(admin, "stores", name, "tienda", excludeStoreId);
+}
+
+/** Unique slug for `service_providers`, derived from the service name. */
+export function generateUniqueServiceSlug(
+  admin: SupabaseClient,
+  name: string,
+  excludeServiceId?: string,
+): Promise<string> {
+  return generateUniqueSlug(admin, "service_providers", name, "servicio", excludeServiceId);
 }

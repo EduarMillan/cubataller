@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { toggleStoreActive, updateSubscriptionStatus, updatePlatformSettings, renewSubscription, approveReceipt, rejectReceipt, toggleServiceActive, deleteServiceAdmin, suspendExpiredStores } from "./_actions";
 import { PROVINCIA_MAP } from "@/lib/cuba-locations";
@@ -7,9 +8,9 @@ import { ConfirmDeleteForm } from "./_confirm-delete-form";
 export default async function AdminPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; filtro?: string; sq?: string; sfiltro?: string }>;
+  searchParams: Promise<{ q?: string; filtro?: string; sq?: string; sfiltro?: string; ok?: string }>;
 }) {
-  const { q, filtro, sq, sfiltro } = await searchParams;
+  const { q, filtro, sq, sfiltro, ok } = await searchParams;
   const admin = createSupabaseAdminClient();
 
   // Fetch all stores with owner info and subscription
@@ -34,7 +35,7 @@ export default async function AdminPage({
 
   // Fetch user emails (covers both store owners and service owners in one call)
   const ownerUserIds = (memberships ?? []).map((m) => m.user_id);
-  const serviceUserIds = (services ?? []).map((s) => s.user_id);
+  const serviceUserIds = (services ?? []).map((s) => s.user_id).filter(Boolean);
   const allUserIds = [...new Set([...ownerUserIds, ...serviceUserIds])];
   const ownerEmails: Record<string, string> = {};
   if (allUserIds.length > 0) {
@@ -110,12 +111,14 @@ export default async function AdminPage({
   let filteredServices = services ?? [];
   if (sfiltro === "activos") filteredServices = filteredServices.filter((s) => s.is_active);
   if (sfiltro === "inactivos") filteredServices = filteredServices.filter((s) => !s.is_active);
+  if (sfiltro === "sin_cuenta") filteredServices = filteredServices.filter((s) => !s.user_id);
   if (sq && sq.trim()) {
     const term = sq.trim().toLowerCase();
     filteredServices = filteredServices.filter(
       (s) =>
         s.name.toLowerCase().includes(term) ||
-        (ownerEmails[s.user_id] ?? "").toLowerCase().includes(term),
+        (s.municipio ?? "").toLowerCase().includes(term) ||
+        (s.user_id ? ownerEmails[s.user_id] ?? "" : "").toLowerCase().includes(term),
     );
   }
 
@@ -148,6 +151,12 @@ export default async function AdminPage({
           Administra las tiendas, servicios y suscripciones de la plataforma.
         </p>
       </header>
+
+      {ok && (
+        <div className="rounded-md border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-300">
+          {ok}
+        </div>
+      )}
 
       {/* Metrics */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-5 sm:gap-4">
@@ -456,6 +465,21 @@ export default async function AdminPage({
             const ownerEmail = storeOwnerEmail[store.id] ?? "—";
             const now = new Date();
 
+            // Mirrors suspend_expired_stores(): past this date the store is
+            // switched back off on its own, so reactivating it without renewing
+            // would not last. "Reactivar" renews the period in that case.
+            const deadline =
+              sub?.status === "trialing"
+                ? sub.trial_ends_at
+                : sub?.status === "active"
+                  ? sub.current_period_ends_at
+                  : sub?.status === "past_due"
+                    ? sub.current_period_ends_at ?? sub.trial_ends_at
+                    : null;
+            const subExpired = deadline
+              ? new Date(deadline).getTime() + gracePeriodDays * 24 * 60 * 60 * 1000 < now.getTime()
+              : false;
+
             let trialDaysLeft: number | null = null;
             let trialExpired = false;
             let subLabel = "Sin suscripción";
@@ -545,6 +569,14 @@ export default async function AdminPage({
                         {new Date(sub.trial_ends_at).toLocaleDateString("es-CU")}
                       </p>
                     )}
+                    {subExpired && (
+                      <p className="mt-2 rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-200">
+                        Suscripción vencida el{" "}
+                        {new Date(deadline as string).toLocaleDateString("es-CU")} (más {gracePeriodDays} días
+                        de gracia). Mientras siga vencida, el sistema vuelve a suspender la tienda sola:
+                        reactivarla aquí renueva el período un mes.
+                      </p>
+                    )}
                     {sub && sub.status === "active" && sub.current_period_ends_at && (
                       <p className="mt-1 text-xs text-muted">
                         Período: {new Date(sub.current_period_starts_at).toLocaleDateString("es-CU")} →{" "}
@@ -564,6 +596,18 @@ export default async function AdminPage({
                           className="rounded-md bg-emerald-500 px-3 py-2 text-xs font-bold uppercase tracking-wider text-zinc-950 shadow-md shadow-emerald-500/30 hover:bg-emerald-400 [font-family:var(--font-space-grotesk),system-ui,sans-serif]"
                         >
                           Activar suscripción
+                        </button>
+                      </form>
+                    )}
+
+                    {sub && sub.status === "past_due" && (
+                      <form action={renewSubscription}>
+                        <input type="hidden" name="subscriptionId" value={sub.id} />
+                        <button
+                          type="submit"
+                          className="rounded-md bg-emerald-500 px-3 py-2 text-xs font-bold uppercase tracking-wider text-zinc-950 shadow-md shadow-emerald-500/30 hover:bg-emerald-400 [font-family:var(--font-space-grotesk),system-ui,sans-serif]"
+                        >
+                          Registrar pago +1 mes
                         </button>
                       </form>
                     )}
@@ -603,7 +647,11 @@ export default async function AdminPage({
                             : "bg-orange-600 text-white shadow-md shadow-orange-500/30 hover:bg-orange-500"
                         }`}
                       >
-                        {store.is_active ? "Desactivar" : "Reactivar"}
+                        {store.is_active
+                          ? "Desactivar"
+                          : subExpired
+                            ? "Reactivar +1 mes"
+                            : "Reactivar"}
                       </button>
                     </form>
                   </div>
@@ -617,7 +665,18 @@ export default async function AdminPage({
 
       {/* ── Services section ── */}
       <section className="space-y-3">
-        <h2 className="text-lg font-bold tracking-tight">Servicios</h2>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-lg font-bold tracking-tight">Servicios</h2>
+          <Link
+            href="/admin/servicios/nuevo"
+            className="inline-flex items-center gap-1.5 rounded-md bg-emerald-500 px-4 py-2 text-xs font-bold uppercase tracking-wider text-zinc-950 shadow-md shadow-emerald-500/30 hover:bg-emerald-400 [font-family:var(--font-space-grotesk),system-ui,sans-serif]"
+          >
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+            </svg>
+            Agregar servicio
+          </Link>
+        </div>
 
         {/* Services filters */}
         <form className="flex flex-col gap-2 sm:flex-row">
@@ -644,6 +703,7 @@ export default async function AdminPage({
             <option value="todos">Todos</option>
             <option value="activos">Activos</option>
             <option value="inactivos">Inactivos</option>
+            <option value="sin_cuenta">Agregados por mí</option>
           </select>
           <button type="submit" className="rounded-md bg-orange-600 px-4 py-2.5 text-sm font-bold uppercase tracking-wider text-white shadow-md shadow-orange-500/30 hover:bg-orange-500 [font-family:var(--font-space-grotesk),system-ui,sans-serif]">
             Filtrar
@@ -662,11 +722,17 @@ export default async function AdminPage({
           <div className="flex flex-col items-center rounded-lg border-2 border-dashed border-zinc-800 bg-zinc-900/40 p-8 text-center sm:p-12">
             <h3 className="text-base font-semibold">Sin servicios</h3>
             <p className="mt-1 text-sm text-muted">No hay servicios que coincidan con los filtros.</p>
+            <Link
+              href="/admin/servicios/nuevo"
+              className="mt-4 inline-flex items-center rounded-md bg-emerald-500 px-4 py-2 text-xs font-bold uppercase tracking-wider text-zinc-950 shadow-md shadow-emerald-500/30 hover:bg-emerald-400 [font-family:var(--font-space-grotesk),system-ui,sans-serif]"
+            >
+              Agregar el primero
+            </Link>
           </div>
         ) : (
           <div className="space-y-3">
             {filteredServices.map((service) => {
-              const ownerEmail = ownerEmails[service.user_id] ?? "—";
+              const ownerEmail = service.user_id ? ownerEmails[service.user_id] ?? "—" : null;
               const category = SERVICE_CATEGORY_MAP.get(service.category);
 
               return (
@@ -689,9 +755,14 @@ export default async function AdminPage({
                             DESACTIVADO
                           </span>
                         )}
+                        {!service.user_id && (
+                          <span className="rounded-full bg-sky-500/15 px-2 py-0.5 text-[10px] font-bold text-sky-300 ring-1 ring-sky-500/30">
+                            AGREGADO POR MÍ
+                          </span>
+                        )}
                       </div>
                       <div className="mt-1 flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-muted">
-                        <span className="break-all">{ownerEmail}</span>
+                        <span className="break-all">{ownerEmail ?? "Sin cuenta asociada"}</span>
                         <span>/{service.slug}</span>
                         {service.whatsapp_number && <span>Tel: {service.whatsapp_number}</span>}
                         {service.municipio && (
@@ -712,6 +783,12 @@ export default async function AdminPage({
                     </div>
 
                     <div className="flex shrink-0 flex-wrap items-center gap-2">
+                      <Link
+                        href={`/admin/servicios/${service.id}/editar`}
+                        className="rounded-lg border border-emerald-500/40 px-3 py-2 text-xs font-semibold text-emerald-300 hover:bg-emerald-500/15"
+                      >
+                        Editar
+                      </Link>
                       <form action={toggleServiceActive}>
                         <input type="hidden" name="serviceId" value={service.id} />
                         <input type="hidden" name="active" value={service.is_active ? "false" : "true"} />

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { Tooltip } from "@/app/_components/tooltip";
@@ -62,6 +63,7 @@ export default async function BuscarPage({
 
   let parts: Part[] = [];
   let totalCount = 0;
+  let outOfRange = false;
   const storePhones: Record<string, string | null> = {};
   const storeLocations: Record<string, { provincia: string | null; municipio: string | null; direccion: string | null; storeName: string | null; storeSlug: string | null; logoUrl: string | null }> = {};
 
@@ -102,8 +104,9 @@ export default async function BuscarPage({
   if (provincia) query = query.eq("stores.provincia", provincia);
   if (municipio) query = query.eq("stores.municipio", municipio);
 
-  const { data, count } = await query.range(from, to);
+  const { data, count, error: rangeError } = await query.range(from, to);
   totalCount = count ?? 0;
+  outOfRange = rangeError?.code === "PGRST103";
 
   // Extract parts and store info from the joined result
   const raw = (data ?? []) as unknown as Array<
@@ -142,6 +145,13 @@ export default async function BuscarPage({
     const qs = params.toString();
     return qs ? `/buscar?${qs}` : "/buscar";
   };
+
+  // PostgREST answers a range past the end with 416 and no count, so a stale
+  // ?page= link would render "Sin resultados" over a full catalogue. Send it
+  // back to the first page, keeping the filters.
+  if (pageNum > 1 && (outOfRange || (parts.length === 0 && totalCount > 0))) {
+    redirect(buildPageHref(1));
+  }
 
   const storageBase = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/parts-images/`;
   const logoBase = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/store-logos/`;

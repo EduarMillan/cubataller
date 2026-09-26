@@ -6,6 +6,7 @@ import { PROVINCIA_MAP } from "@/lib/cuba-locations";
 import { DAYS_OF_WEEK, getServiceCategory, type WeeklyHours } from "@/lib/service-categories";
 import { getOpenStatus } from "@/lib/service-hours";
 import { PublicNavSession } from "@/app/_components/public-nav-session";
+import { PublicNavLinks, PublicNavTabs } from "@/app/_components/public-nav-links";
 
 export async function generateMetadata({
   params,
@@ -138,22 +139,12 @@ export default async function ServicioDetallePage({
               className="h-10 w-auto object-contain sm:h-11"
             />
           </Link>
+          <PublicNavLinks active="servicios" />
           <div className="flex items-center gap-2 sm:gap-3">
-            <Link
-              href="/servicios"
-              className="rounded-md px-3 py-2 text-sm font-medium text-zinc-300 hover:text-orange-400"
-            >
-              Servicios
-            </Link>
-            <Link
-              href="/buscar"
-              className="hidden rounded-md px-3 py-2 text-sm font-medium text-zinc-300 hover:text-orange-400 sm:inline-flex"
-            >
-              Repuestos
-            </Link>
             <PublicNavSession variant="dark" />
           </div>
         </div>
+        <PublicNavTabs active="servicios" />
       </nav>
 
       <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-6 px-4 py-6 sm:gap-8 sm:px-6 sm:py-10">

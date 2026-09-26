@@ -73,3 +73,46 @@ select {
 input::-webkit-calendar-picker-indicator {
   filter: invert(0.7);
 }
+
+/* Heartbeat for a call to action we want people to notice: two quick beats and
+   a rest, with a ring that expands and fades out. Pauses on hover and focus so
+   it does not fight the hover state, and is dropped for visitors who ask for
+   reduced motion. */
+@keyframes cta-heartbeat {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(255, 87, 26, 0.45);
+  }
+  14% {
+    transform: scale(1.06);
+    box-shadow: 0 0 0 4px rgba(255, 87, 26, 0.18);
+  }
+  28% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(255, 87, 26, 0.3);
+  }
+  42% {
+    transform: scale(1.05);
+    box-shadow: 0 0 0 9px rgba(255, 87, 26, 0);
+  }
+  56%,
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(255, 87, 26, 0);
+  }
+}
+
+.cta-heartbeat {
+  animation: cta-heartbeat 2.4s ease-in-out infinite;
+}
+
+.cta-heartbeat:hover,
+.cta-heartbeat:focus-visible {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cta-heartbeat {
+    animation: none;
+  }
+}

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { SearchLocationSelects } from "@/app/_components/search-location-selects";
@@ -28,6 +29,8 @@ const HERO_IMAGE = "/fondo.jpg";
 const darkInputClass =
   "w-full rounded-md border border-zinc-700 bg-zinc-900/80 px-3 py-2.5 text-sm text-zinc-100 outline-none transition-colors placeholder:text-zinc-500 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/30";
 
+const PAGE_SIZE = 24;
+
 type ServiceRow = {
   id: string;
   name: string;
@@ -50,9 +53,14 @@ export default async function ServiciosPage({
     provincia?: string;
     municipio?: string;
     q?: string;
+    page?: string;
   }>;
 }) {
-  const { categoria, provincia, municipio, q } = await searchParams;
+  const { categoria, provincia, municipio, q, page } = await searchParams;
+
+  const pageNum = Math.max(1, parseInt(page ?? "1", 10) || 1);
+  const from = (pageNum - 1) * PAGE_SIZE;
+  const to = from + PAGE_SIZE - 1;
 
   const supabase = await createSupabaseServerClient();
 
@@ -60,10 +68,10 @@ export default async function ServiciosPage({
     .from("service_providers")
     .select(
       "id, name, slug, category, description, whatsapp_number, provincia, municipio, direccion, logo_url, hours",
+      { count: "exact" },
     )
     .eq("is_active", true)
-    .order("name")
-    .limit(120);
+    .order("name");
 
   if (categoria) query = query.eq("category", categoria);
   if (provincia) query = query.eq("provincia", provincia);
@@ -77,8 +85,30 @@ export default async function ServiciosPage({
     }
   }
 
-  const { data } = await query;
+  const { data, count, error } = await query.range(from, to);
   const services = (data ?? []) as ServiceRow[];
+
+  const totalCount = count ?? 0;
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+  const currentPage = Math.min(pageNum, totalPages);
+
+  const buildPageHref = (target: number) => {
+    const params = new URLSearchParams();
+    if (categoria) params.set("categoria", categoria);
+    if (provincia) params.set("provincia", provincia);
+    if (municipio) params.set("municipio", municipio);
+    if (q) params.set("q", q);
+    if (target > 1) params.set("page", String(target));
+    const qs = params.toString();
+    return qs ? `/servicios?${qs}` : "/servicios";
+  };
+
+  // PostgREST answers a range past the end with 416 and no count, so a stale
+  // ?page= link would render "Sin resultados" over a directory full of
+  // listings. Send it back to the first page, keeping the filters.
+  if (pageNum > 1 && (error?.code === "PGRST103" || (services.length === 0 && totalCount > 0))) {
+    redirect(buildPageHref(1));
+  }
 
   const logoBase = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/service-logos/`;
 
@@ -197,9 +227,14 @@ export default async function ServiciosPage({
         <header className="mb-6 flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="text-lg font-bold tracking-tight text-white sm:text-xl [font-family:var(--font-space-grotesk),system-ui,sans-serif]">
-              {services.length === 0
+              {totalCount === 0
                 ? "Sin resultados"
-                : `${services.length} ${services.length === 1 ? "servicio" : "servicios"}`}
+                : `${totalCount} ${totalCount === 1 ? "servicio" : "servicios"}`}
+              {totalPages > 1 && (
+                <span className="ml-2 text-sm font-medium text-zinc-400">
+                  · Página {currentPage} de {totalPages}
+                </span>
+              )}
             </h2>
             {(categoria || provincia || municipio || q) && (
               <Link
@@ -220,11 +255,53 @@ export default async function ServiciosPage({
             </p>
           </div>
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {services.map((service) => (
-              <ServiceCard key={service.id} service={service} logoBase={logoBase} />
-            ))}
-          </div>
+          <>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {services.map((service) => (
+                <ServiceCard key={service.id} service={service} logoBase={logoBase} />
+              ))}
+            </div>
+
+            {totalPages > 1 && (
+              <nav
+                aria-label="Paginación"
+                className="mt-6 flex flex-col items-center gap-3 sm:flex-row sm:justify-between"
+              >
+                <p className="text-xs text-zinc-400">
+                  Mostrando {from + 1}–{Math.min(from + services.length, totalCount)} de {totalCount}
+                </p>
+                <div className="flex items-center gap-2">
+                  {currentPage > 1 ? (
+                    <Link
+                      href={buildPageHref(currentPage - 1)}
+                      className="rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-200 hover:border-emerald-500 hover:text-emerald-300"
+                    >
+                      ← Anterior
+                    </Link>
+                  ) : (
+                    <span className="cursor-not-allowed rounded-md border border-zinc-800 bg-zinc-900/50 px-3 py-2 text-sm text-zinc-600">
+                      ← Anterior
+                    </span>
+                  )}
+                  <span className="px-2 text-sm text-zinc-300">
+                    {currentPage} / {totalPages}
+                  </span>
+                  {currentPage < totalPages ? (
+                    <Link
+                      href={buildPageHref(currentPage + 1)}
+                      className="rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-200 hover:border-emerald-500 hover:text-emerald-300"
+                    >
+                      Siguiente →
+                    </Link>
+                  ) : (
+                    <span className="cursor-not-allowed rounded-md border border-zinc-800 bg-zinc-900/50 px-3 py-2 text-sm text-zinc-600">
+                      Siguiente →
+                    </span>
+                  )}
+                </div>
+              </nav>
+            )}
+          </>
         )}
         </DistancesProvider>
       </main>

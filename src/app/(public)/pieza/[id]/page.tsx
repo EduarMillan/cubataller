@@ -6,6 +6,7 @@ import { PROVINCIA_MAP } from "@/lib/cuba-locations";
 import { TrackView } from "@/app/_components/track-view";
 import { PartGallery } from "@/app/_components/part-gallery";
 import { PublicNavSession } from "@/app/_components/public-nav-session";
+import { PublicNavLinks, PublicNavTabs } from "@/app/_components/public-nav-links";
 
 export async function generateMetadata({
   params,
@@ -172,16 +173,12 @@ export default async function PiezaDetallePage({
               className="h-10 w-auto object-contain sm:h-11"
             />
           </Link>
+          <PublicNavLinks active="repuestos" />
           <div className="flex items-center gap-2 sm:gap-3">
-            <Link
-              href="/buscar"
-              className="rounded-md px-3 py-2 text-sm font-medium text-zinc-300 hover:text-orange-400"
-            >
-              Buscar repuestos
-            </Link>
             <PublicNavSession variant="dark" />
           </div>
         </div>
+        <PublicNavTabs active="repuestos" />
       </nav>
 
       <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 px-4 py-6 sm:gap-8 sm:px-6 sm:py-10">
@@ -289,8 +286,11 @@ export default async function PiezaDetallePage({
               <div className="mt-3 flex flex-wrap gap-2">
                 <Link
                   href={`/tienda/${store.slug}`}
-                  className="inline-flex items-center gap-1.5 rounded-md border border-zinc-700 px-3 py-1.5 text-xs font-medium text-zinc-300 hover:border-orange-500/50 hover:text-orange-400"
+                  className="cta-heartbeat inline-flex items-center gap-1.5 rounded-md border border-orange-500/60 bg-orange-500/10 px-3 py-1.5 text-xs font-semibold text-orange-300 hover:border-orange-500 hover:bg-orange-500/20 hover:text-orange-200"
                 >
+                  <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="m20.25 7.5-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z" />
+                  </svg>
                   Ver todas sus piezas
                 </Link>
                 {mapsUrl && (
